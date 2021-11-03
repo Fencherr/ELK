@@ -1,0 +1,26 @@
+# For master node
+# need to change node.name in each master node elasticsearch.yml for ex. master-1 master-2 master-3
+cluster.name: prod-elk
+node.name: master-1 
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+network.host: [_local_, _site_]
+discovery.zen.ping.unicast.hosts: ["master1ipaddress", "master2ipaddress", "master3ipaddress"]
+discovery.zen.minimum_master_nodes: 1
+# You can make your master node also data node set node.data: true
+node.master: true
+node.data: false
+node.ingest: false
+
+# For data node
+# need to change node.name in each data node elasticsearch.yml for ex. data-1 data-2 data-3
+cluster.name: prod-elk
+node.name: data-1
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+network.host: [_local_, _site_]
+discovery.zen.ping.unicast.hosts: ["master1ipaddress", "master2ipaddress", "master3ipaddress"]
+discovery.zen.minimum_master_nodes: 1
+node.master: false
+node.data: true
+node.ingest: true
