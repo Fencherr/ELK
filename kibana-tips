@@ -1,0 +1,2 @@
+# For increase Kibana memory 
+echo 'NODE_OPTIONS="--max-old-space-size=2048"' >> /etc/default/kibana
