@@ -1,0 +1,8 @@
+
+
+
+# Delete elasticsearch index
+# Find index name with
+curl -x GET 'http://localhost:9200/_cat/indices?v'
+# And put name which index you want to delete
+curl -X DELETE 'http://localhost:9200/examples'
