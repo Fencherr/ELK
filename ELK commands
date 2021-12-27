@@ -1,0 +1,61 @@
+##Show cluster health | pretty formated
+curl -XGET 'IP-OF-ELASTIC-SERVER:9200/_cluster/health?pretty'
+
+##Show cluster settings | pretty formated
+curl -XGET 'IP-OF-ELASTIC-SERVER:9200/_cluster/settings?pretty'
+
+##Show all indexes
+curl -XGET 'IP-OF-ELASTIC-SERVER:9200/_cat/indices?v'
+
+##Show all indexes which start with logsta*
+curl -XGET 'IP-OF-ELASTIC-SERVER:9200/_cat/indices/logsta*?v&s=index'
+
+##Show all indexes/shards in state unassigned
+curl -XGET -H 'Content-Type: application/json' http://IP-OF-ELASTIC-SERVER:9200/_cat/shards | grep UNASSIGNED
+
+##Unlock all indexes manually
+curl -XPUT -H "Content-Type: application/json" http://IP-OF-ELASTIC-SERVER:9200/_all/_settings -d '{"index.blocks.read_only_allow_delete": null}'
+
+##Get default logstash template from elasticsearch | pretty formated | stored in temp directory
+curl -XGET 'IP-OF-ELASTIC-SERVER:9200/_template/logstash?pretty' > /tmp/logstash-template.json
+
+##Upload modified logstash template to elasticsearch from directory where logstash-template.json exists | hint dont forget to remove the logstash parameter in the file
+curl -XPUT -H 'Content-Type: application/json' 'IP-OF-ELASTIC-SERVER:9200/_template/logstash' -d "@logstash-template.json"
+
+##Run logstash from commandline with all config files in debug mode
+/usr/share/logstash/bin/logstash --path.settings /etc/logstash/ -r -f "/etc/logstash/conf.d/*" --log.level debug
+
+##Run logstash from commandline with specific config file in debug mode
+/usr/share/logstash/bin/logstash --path.settings /etc/logstash/ -r -f "/etc/logstash/conf.d/00-test.config" --log.level debug
+
+##Change the number of replicas at one existing index
+curl -XPUT -H 'Content-Type: application/json' 'IP-OF-ELASTIC-SERVER:9200/.alert/_settings' -d '{ "index" : {"number_of_replicas" : 0}}'
+
+##Change the number of replicas at multiple existing indexes | sets number_of_replicas:0 to all cisco indexes from the year 2018
+curl -XPUT -H 'Content-Type: application/json' 'IP-OF-ELASTIC-SERVER:9200/logstash-cisco-2018.*.*/_settings' -d '{ "index" : {"number_of_replicas" : 0}}'
+
+##Delete all indexes from a year
+curl -XDELETE 'IP-OF-ELASTIC-SERVER:9200/logstash-cisco-2018.*.*'
+
+##Create an index manuall from cli via curl | name of index is aa_test_index | number_of_shards:1 and number_of_replicas:0
+curl -XPUT -H 'Content-Type: application/json' 'IP-OF-ELASTIC-SERVER:9200/aa_test_index?pretty' -d '{"settings" : {"index" : {"number_of_shards" : 1,"number_of_replicas" : 0 }}}'
+
+##Create an index manuall from cli by using logstash | name of index is aa_test_index_from_cli
+/usr/share/logstash/bin/logstash --path.settings "/etc/logstash/" -e 'input { stdin { } } output { elasticsearch { hosts => "IP-OF-ELASTIC-SERVER:9200" index => "aa_test_index_from_cli" } }'
+
+##Logstash config test
+/usr/share/logstash/bin/logstash --path.settings "/etc/logstash/" --config.test_and_exit -f /etc/logstash/conf.d/
+
+##Set existing index to read-only | ! needed for shrinking shards ! | this command sets all shards from december 2018 to read-only
+curl -XPUT -H 'Content-Type: application/json' 'IP-OF-ELASTIC-SERVER:9200/logstash-cisco-2018.12.*/_settings' -d '{"index.blocks.write": true}'
+
+##Shrink existing shards | shrinks the data from existing index "logstash-cisco-2018.12.24" to the new "smaller index" logstash-cisco-2018.12.24.shrinked | copy all index settings to new one | number_of_shards:1 and number_of_replicas:0 | using best_compression | disable read-only mode
+curl -POST -H 'Content-Type: application/json' 'IP-OF-ELASTIC-SERVER:9200/logstash-cisco-2018.12.24/_shrink/logstash-cisco-2018.12.24-shrinked?copy_settings=true' -d '{ "settings": { "index.number_of_replicas": 0, "index.number_of_shards": 1, "index.codec": "best_compression", "index.routing.allocation.require._name": null, "index.blocks.write": null }, "aliases": { "my_search_indices": {}  }}'
+
+##Increase the elasticsearch shard limit from 1000 to 5000 for each node
+curl -XPUT -H 'Content-Type: application/json' 'IP-OF-ELASTIC-SERVER:9200/_cluster/settings' -d '{ "persistent" : {"cluster.max_shards_per_node" : 5000}}'
+
+##Set the Cluster Metadata Administrator Email address
+curl -XPUT -H 'Content-Type: application/json' 'IP-OF-ELASTIC-SERVER:9200/_cluster/settings' -d '{ "persistent" : {"cluster.metadata.administrator" : "
+admin@yourdomain.c
+om"}}'
